@@ -20,6 +20,11 @@ export enum Accommodation {
   APARTAMENTO = 'APARTAMENTO',
 }
 
+export enum ContractType {
+  PME = 'PME / EMPRESARIAL',
+  INDIVIDUAL = 'INDIVIDUAL / FAMILIAR',
+}
+
 export interface PriceTable {
   [key: string]: number[]; // Array of 10 prices corresponding to age ranges
 }
@@ -31,9 +36,11 @@ export interface Beneficiary {
 }
 
 export interface PlanSelection {
+  contractType: ContractType;
   copartType: CopartType;
   planType: PlanType;
   segmentation: Segmentation;
   accommodation: Accommodation;
-  applyDiscount: boolean;
+  applyDiscount: boolean; // 15% promo
+  includeOdonto: boolean; // New: triggers "Medica 1" prices for Individual
 }
