@@ -1,0 +1,5 @@
+{
+  "name": "Hapvida Price Calculator",
+  "description": "A dynamic calculator for Hapvida health insurance plans in Curitiba/PR, featuring real-time price updates, dependent management, and discount toggles.",
+  "requestFramePermissions": []
+}
