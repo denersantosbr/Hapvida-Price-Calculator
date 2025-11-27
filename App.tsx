@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PlanSelector from './components/PlanSelector';
 import BeneficiaryManager from './components/BeneficiaryManager';
 import Summary from './components/Summary';
-import { PlanSelection, Beneficiary, CopartType, PlanType, Segmentation, Accommodation, ContractType } from './types';
+import { PlanSelection, Beneficiary, CopartType, PlanType, Segmentation, Accommodation, ContractType, Region } from './types';
 import { Activity, Lock, User, ArrowRight, KeyRound, LogOut } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -14,6 +14,7 @@ const App: React.FC = () => {
 
   // App State
   const [selection, setSelection] = useState<PlanSelection>({
+    region: Region.CURITIBA,
     contractType: ContractType.PME,
     copartType: CopartType.TOTAL,
     planType: PlanType.NOSSO_PLANO,
@@ -49,17 +50,23 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
         <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-          <div className="bg-blue-600 p-8 text-center relative overflow-hidden">
+          <div className="bg-white border-b border-slate-100 p-8 text-center relative">
              <div className="relative z-10">
-                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mx-auto mb-4 text-white">
-                  <Activity size={32} />
+                <div className="w-auto h-24 flex items-center justify-center mx-auto mb-4">
+                  <img 
+                    src="https://www.unipam.com.br/wp-content/uploads/2020/12/logo-unipam.png" 
+                    alt="Unipam Logo"
+                    className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                        e.currentTarget.src = "https://via.placeholder.com/150x80?text=Unipam+Logo";
+                        e.currentTarget.onerror = null;
+                    }}
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-1">Acesso Restrito</h1>
-                <p className="text-blue-100 text-sm">Simulador Hapvida Curitiba</p>
+                <h1 className="text-2xl font-bold text-slate-800 mb-1">Acesso Restrito</h1>
+                <p className="text-slate-500 text-sm">Simulador Hapvida Curitiba</p>
              </div>
-             {/* Decorative circles */}
-             <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500 rounded-full opacity-50 blur-2xl"></div>
-             <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-400 rounded-full opacity-50 blur-2xl"></div>
           </div>
 
           <form onSubmit={handleLogin} className="p-8 space-y-6">
@@ -133,7 +140,9 @@ const App: React.FC = () => {
                 </div>
                 <div>
                     <h1 className="text-xl font-bold leading-tight">Hapvida</h1>
-                    <p className="text-xs text-slate-500 font-medium tracking-wide">TABELA DE VENDAS CURITIBA - PR</p>
+                    <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
+                        TABELA DE VENDAS {selection.region.split('-')[0].trim()}
+                    </p>
                 </div>
             </div>
             
@@ -163,7 +172,7 @@ const App: React.FC = () => {
                 
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                     <p className="text-sm text-blue-800">
-                        <strong>Instruções:</strong> Escolha entre PME ou Individual. Para Individual, a inclusão do Plano Odontológico pode reduzir o valor da mensalidade de saúde (Tabela Médica 1).
+                        <strong>Instruções:</strong> Escolha a cidade correta. Para Individual, a inclusão do Plano Odontológico pode reduzir o valor da mensalidade de saúde (Tabela Médica 1).
                     </p>
                 </div>
 

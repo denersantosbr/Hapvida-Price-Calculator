@@ -11,11 +11,12 @@ interface SummaryProps {
 }
 
 const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
-  const { copartType, planType, segmentation, accommodation, applyDiscount, contractType, includeOdonto } = selection;
+  const { copartType, planType, segmentation, accommodation, applyDiscount, contractType, includeOdonto, region } = selection;
   const [includeAdesao, setIncludeAdesao] = useState(false);
 
-  // Determine correct price array
-  const rootPrices = PRICES[contractType];
+  // Determine correct price array based on Region -> Contract -> Copart -> Plan -> Seg -> Accom
+  const regionPrices = PRICES[region];
+  const rootPrices = regionPrices?.[contractType];
   const copartPrices = rootPrices?.[copartType];
   const planPrices = copartPrices?.[planType];
   const segPrices = planPrices?.[segmentation];
@@ -25,6 +26,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
   
   if (contractType === ContractType.INDIVIDUAL) {
       // For individual, prices depend on whether Odonto is included (Medica 1 vs Medica 2)
+      // Note: "withOdonto" means Discounted Health Table (Medica 1)
       pricesArray = includeOdonto ? accPrices?.withOdonto : accPrices?.withoutOdonto;
   } else {
       pricesArray = accPrices;
@@ -78,7 +80,8 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     doc.setTextColor(100);
     doc.setFont("helvetica", "normal");
     doc.text(`Simulação - ${contractType}`, 14, 26);
-    doc.text(`Data: ${new Date().toLocaleDateString()}`, 14, 32);
+    doc.text(`${region}`, 14, 30);
+    doc.text(`Data: ${new Date().toLocaleDateString()}`, 14, 35);
 
     // --- Plan Configuration ---
     doc.setFontSize(14);
@@ -87,6 +90,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     doc.text("Resumo do Plano", 14, 50);
 
     const configData = [
+      ["Região", region],
       ["Tipo de Contratação", contractType],
       ["Modalidade", selection.copartType],
       ["Plano", selection.planType],
@@ -182,7 +186,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     const footerText = [
       "__________________________________________________________________________",
       "Valores sujeitos a alteração conforme regras da operadora e ANS.",
-      "Proposta válida para tabela: " + contractType,
+      "Proposta válida para: " + region,
       "ANS - nº 34.078-2 | Hapvida Assistência Médica"
     ];
     
@@ -192,7 +196,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
       footerY += 5;
     });
 
-    doc.save("Proposta_Hapvida.pdf");
+    doc.save(`Proposta_Hapvida_${region}.pdf`);
   };
 
   return (

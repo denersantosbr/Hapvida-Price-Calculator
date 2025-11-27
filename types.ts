@@ -1,5 +1,13 @@
+export enum Region {
+  CURITIBA = 'CURITIBA - PR',
+  MARINGA = 'MARINGÁ - PR',
+  LONDRINA = 'LONDRINA - PR',
+  JOINVILLE_BC = 'BALNEÁRIO CAMBORIÚ / JOINVILLE - SC',
+}
+
 export enum PlanType {
   NOSSO_PLANO = 'NOSSO PLANO',
+  NOSSO_MEDICO = 'NOSSO MÉDICO',
   PLENO = 'PLENO',
 }
 
@@ -36,6 +44,7 @@ export interface Beneficiary {
 }
 
 export interface PlanSelection {
+  region: Region;
   contractType: ContractType;
   copartType: CopartType;
   planType: PlanType;

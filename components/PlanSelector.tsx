@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { PlanSelection, PlanType, CopartType, Segmentation, Accommodation, Beneficiary, ContractType } from '../types';
+import { PlanSelection, PlanType, CopartType, Segmentation, Accommodation, Beneficiary, ContractType, Region } from '../types';
 import { PRICES, ODONTO_PRICE_INDIVIDUAL_PROMO } from '../constants';
-import { Check, Info, Percent, Sparkles, Lock, Building2, User, HeartPulse } from 'lucide-react';
+import { Check, Info, Percent, Sparkles, Lock, Building2, User, HeartPulse, MapPin } from 'lucide-react';
 
 interface PlanSelectorProps {
   selection: PlanSelection;
@@ -15,7 +15,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
   // Helper to calculate total cost for a specific config
   const calculateTotal = (config: PlanSelection) => {
     // Navigate price structure
-    const rootPrices = PRICES[config.contractType];
+    const regionPrices = PRICES[config.region];
+    const rootPrices = regionPrices?.[config.contractType];
     const copartPrices = rootPrices?.[config.copartType];
     const planPrices = copartPrices?.[config.planType];
     const segPrices = planPrices?.[config.segmentation];
@@ -37,13 +38,10 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
         return acc + price;
     }, 0);
 
-    // Add odonto cost for calculation if included
-    // Note: For Individual, "includeOdonto" changes the health price AND adds odonto cost
     let odontoTotal = 0;
     if (config.contractType === ContractType.INDIVIDUAL && config.includeOdonto) {
         odontoTotal = beneficiaries.length * ODONTO_PRICE_INDIVIDUAL_PROMO;
     }
-    // For PME in Cheapest Mode, we usually assume NO odonto unless it makes health cheaper (which it doesn't for PME)
     
     return healthTotal + odontoTotal;
   };
@@ -52,27 +50,33 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
   const findCheapestConfig = () => {
     const validConfigs: Partial<PlanSelection>[] = [];
 
-    // Define all valid paths
     const coparts = [CopartType.PARCIAL, CopartType.TOTAL];
-    const contractType = selection.contractType; // Keep user selected contract type
+    const contractType = selection.contractType;
+    const region = selection.region;
     
     coparts.forEach(copart => {
-        // Nosso Plano Combinations
-        if (contractType === ContractType.PME) {
+        // --- NOSSO PLANO ---
+        if (contractType === ContractType.PME && region === Region.CURITIBA) {
              validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB, accommodation: Accommodation.SEM_ACOM, includeOdonto: false });
         }
         
-        // AMB_HOSP is valid for both
         validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP, accommodation: Accommodation.ENFERMARIA, includeOdonto: false });
         validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP, accommodation: Accommodation.APARTAMENTO, includeOdonto: false });
 
-        // Individual has Odonto variants for health discount
         if (contractType === ContractType.INDIVIDUAL) {
             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP, accommodation: Accommodation.ENFERMARIA, includeOdonto: true });
             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP, accommodation: Accommodation.APARTAMENTO, includeOdonto: true });
         }
 
-        // Pleno Combinations (AMB_HOSP_OBST)
+        // --- NOSSO MEDICO (Only in new regions) ---
+        if (region !== Region.CURITIBA && contractType === ContractType.INDIVIDUAL) {
+             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_MEDICO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.ENFERMARIA, includeOdonto: false });
+             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_MEDICO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.ENFERMARIA, includeOdonto: true });
+        }
+
+        // --- PLENO ---
+        // Pleno is generally AMB_HOSP_OBST
+        // Note: Check availability per region if needed. Assuming available.
         validConfigs.push({ contractType, copartType: copart, planType: PlanType.PLENO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.ENFERMARIA, includeOdonto: false });
         validConfigs.push({ contractType, copartType: copart, planType: PlanType.PLENO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.APARTAMENTO, includeOdonto: false });
 
@@ -81,8 +85,8 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
              validConfigs.push({ contractType, copartType: copart, planType: PlanType.PLENO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.APARTAMENTO, includeOdonto: true });
         }
         
-        // Individual also has AMB_HOSP_OBST for Nosso Plano
          if (contractType === ContractType.INDIVIDUAL) {
+            // Nosso Plano often has Obst in Individual
             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.ENFERMARIA, includeOdonto: false });
             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.ENFERMARIA, includeOdonto: true });
             validConfigs.push({ contractType, copartType: copart, planType: PlanType.NOSSO_PLANO, segmentation: Segmentation.AMB_HOSP_OBST, accommodation: Accommodation.APARTAMENTO, includeOdonto: false });
@@ -96,7 +100,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
     validConfigs.forEach(config => {
         const fullConfig = { ...selection, ...config }; 
         const price = calculateTotal(fullConfig);
-        if (price < minPrice) {
+        if (price < minPrice && price > 0) {
             minPrice = price;
             bestConfig = fullConfig;
         }
@@ -105,7 +109,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
     return bestConfig;
   };
 
-  // Effect to update selection when in cheapest mode
   useEffect(() => {
     if (isCheapestMode && beneficiaries.length > 0) {
         const best = findCheapestConfig();
@@ -119,32 +122,39 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
             onChange(best);
         }
     }
-  }, [isCheapestMode, beneficiaries, selection.applyDiscount, selection.contractType, onChange]);
+  }, [isCheapestMode, beneficiaries, selection.applyDiscount, selection.contractType, selection.region, onChange]);
 
   const updateField = (field: keyof PlanSelection, value: any) => {
-    if (isCheapestMode && field !== 'contractType') setIsCheapestMode(false);
+    if (isCheapestMode && field !== 'contractType' && field !== 'region') setIsCheapestMode(false);
 
     let newSelection = { ...selection, [field]: value };
 
+    // Region Change Logic
+    if (field === 'region') {
+        // If switching to a new region, verify contract type availability
+        // For now, new regions only have Individual data populated clearly in my context
+        if (value !== Region.CURITIBA) {
+             newSelection.contractType = ContractType.INDIVIDUAL;
+        }
+    }
+
     // Reset logic when switching Contract Type
     if (field === 'contractType') {
-        newSelection.applyDiscount = false; // Reset promo
-        newSelection.includeOdonto = false; // Reset odonto
+        newSelection.applyDiscount = false;
+        newSelection.includeOdonto = false;
         newSelection.copartType = CopartType.TOTAL;
         
         if (value === ContractType.INDIVIDUAL) {
-            // Individual defaults
             newSelection.segmentation = Segmentation.AMB_HOSP;
             newSelection.accommodation = Accommodation.ENFERMARIA;
             newSelection.planType = PlanType.NOSSO_PLANO;
         } else {
-            // PME defaults
             newSelection.segmentation = Segmentation.AMB_HOSP;
             newSelection.accommodation = Accommodation.ENFERMARIA;
         }
     }
 
-    // Handle Segmentation/Accommodation constraints
+    // Plan Type Constraints
     if (field === 'planType') {
         if (value === PlanType.NOSSO_PLANO) {
              if (newSelection.contractType === ContractType.PME) {
@@ -152,7 +162,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
              } else {
                  newSelection.segmentation = Segmentation.AMB_HOSP;
              }
-        } else {
+        } else if (value === PlanType.NOSSO_MEDICO || value === PlanType.PLENO) {
              newSelection.segmentation = Segmentation.AMB_HOSP_OBST;
         }
         newSelection.accommodation = Accommodation.ENFERMARIA;
@@ -176,22 +186,49 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
             </h2>
         </div>
 
+        {/* Region Selection */}
+        <div className="mb-6">
+            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <MapPin size={16} className="text-blue-500" />
+                Cidade / Região
+            </label>
+            <div className="relative">
+                <select
+                    value={selection.region}
+                    onChange={(e) => updateField('region', e.target.value)}
+                    className="w-full p-3 pl-4 pr-10 rounded-xl border border-slate-300 bg-slate-50 text-slate-800 font-medium appearance-none focus:ring-2 focus:ring-blue-500 outline-none"
+                    disabled={isCheapestMode}
+                >
+                    {Object.values(Region).map((region) => (
+                        <option key={region} value={region}>{region}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+
         {/* Contract Type Selection */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-            {[ContractType.PME, ContractType.INDIVIDUAL].map((type) => (
-                <button
-                    key={type}
-                    onClick={() => updateField('contractType', type)}
-                    className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                        selection.contractType === type
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50 text-slate-500'
-                    }`}
-                >
-                    {type === ContractType.PME ? <Building2 size={24} className="mb-2"/> : <User size={24} className="mb-2"/>}
-                    <span className="font-bold text-sm text-center">{type}</span>
-                </button>
-            ))}
+            {[ContractType.PME, ContractType.INDIVIDUAL].map((type) => {
+                const isDisabled = selection.region !== Region.CURITIBA && type === ContractType.PME;
+                return (
+                    <button
+                        key={type}
+                        onClick={() => !isDisabled && updateField('contractType', type)}
+                        disabled={isDisabled}
+                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                            selection.contractType === type
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : isDisabled 
+                                ? 'border-slate-100 bg-slate-100 text-slate-400 opacity-60 cursor-not-allowed'
+                                : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50 text-slate-500'
+                        }`}
+                    >
+                        {type === ContractType.PME ? <Building2 size={24} className="mb-2"/> : <User size={24} className="mb-2"/>}
+                        <span className="font-bold text-sm text-center">{type}</span>
+                        {isDisabled && <span className="text-[10px] text-red-400 mt-1">(Sem dados PME)</span>}
+                    </button>
+                );
+            })}
         </div>
 
         {/* Cheapest Option Toggle */}
@@ -275,15 +312,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
         </div>
 
         <div className={`space-y-6 transition-opacity duration-300 ${isCheapestMode ? 'opacity-60 pointer-events-none grayscale-[0.5]' : ''}`}>
-            {isCheapestMode && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none mt-40">
-                    <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-200 shadow-sm flex items-center gap-2 text-indigo-600 text-sm font-semibold">
-                        <Lock size={14} />
-                        Seleção bloqueada pelo modo automático
-                    </div>
-                </div>
-            )}
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Modalidade */}
                 <div className="space-y-2">
@@ -318,28 +347,33 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-slate-700">Plano</label>
                     <div className="flex flex-col gap-2">
-                    {[PlanType.NOSSO_PLANO, PlanType.PLENO].map((type) => (
-                        <label
-                        key={type}
-                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                            selection.planType === type
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                        }`}
-                        >
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="radio"
-                                name="planType"
-                                className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
-                                checked={selection.planType === type}
-                                onChange={() => updateField('planType', type)}
-                                disabled={isCheapestMode}
-                            />
-                            <span className="text-sm font-medium">{type}</span>
-                        </div>
-                        </label>
-                    ))}
+                    {[PlanType.NOSSO_PLANO, PlanType.NOSSO_MEDICO, PlanType.PLENO].map((type) => {
+                        // Logic to hide/show plans based on region
+                        if (type === PlanType.NOSSO_MEDICO && selection.region === Region.CURITIBA) return null;
+                        
+                        return (
+                            <label
+                            key={type}
+                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                                selection.planType === type
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                            }`}
+                            >
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="radio"
+                                    name="planType"
+                                    className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
+                                    checked={selection.planType === type}
+                                    onChange={() => updateField('planType', type)}
+                                    disabled={isCheapestMode}
+                                />
+                                <span className="text-sm font-medium">{type}</span>
+                            </div>
+                            </label>
+                        );
+                    })}
                     </div>
                 </div>
             </div>
@@ -431,7 +465,10 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
             <Info size={18} className="shrink-0 mt-0.5 text-blue-500" />
             <div className="space-y-1">
                 <p>
-                    <strong>{selection.contractType}</strong>: {selection.planType} • {selection.copartType}
+                    <strong>{selection.region}</strong> • {selection.contractType}
+                </p>
+                <p>
+                    {selection.planType} • {selection.copartType}
                 </p>
                 <p className="text-xs opacity-80">
                     {selection.applyDiscount 
@@ -439,11 +476,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
                         : "Tabela base sem desconto promocional de 15%."
                     }
                 </p>
-                {selection.includeOdonto && (
-                     <p className="text-xs text-pink-600 font-semibold">
-                        + Plano Odontológico Incluso
-                    </p>
-                )}
             </div>
         </div>
       </div>
