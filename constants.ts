@@ -1,4 +1,4 @@
-import { PlanType, CopartType, Segmentation, Accommodation, ContractType, Region } from './types';
+import { PlanType, CopartType, Segmentation, Accommodation, ContractType, Region, Operator } from './types';
 
 export const AGE_RANGES = [
   "00 a 18 anos",
@@ -18,7 +18,7 @@ export const ODONTO_PRICE_PME = 22.36; // Premium
 export const ODONTO_PRICE_INDIVIDUAL_PROMO = 24.50; // Promo value when tied to health
 export const ODONTO_PRICE_INDIVIDUAL_NORMAL = 75.84; // Not used in sim currently, assuming promo
 
-// --- CURITIBA PRICES ---
+// ================= HAPVIDA =================
 const CURITIBA_PME = {
   [CopartType.PARCIAL]: {
     [PlanType.NOSSO_PLANO]: {
@@ -131,7 +131,6 @@ const CURITIBA_INDIVIDUAL = {
   }
 };
 
-// --- MARINGÁ PRICES (INDIVIDUAL ONLY) ---
 const MARINGA_INDIVIDUAL = {
   [CopartType.PARCIAL]: {
     [PlanType.NOSSO_PLANO]: {
@@ -168,29 +167,9 @@ const MARINGA_INDIVIDUAL = {
         }
       }
     }
-  },
-  [CopartType.TOTAL]: {
-    // Maringá Total prices (Com Coparticipação) - extracted from PDF if needed
-    // Assuming structure exists, placeholder for now as OCR mainly showed Parcial
-    // Based on user request to add tables, I will add these if they appear in future.
-    // For now, mapping Partial as the main request source.
-    [PlanType.NOSSO_PLANO]: {
-        [Segmentation.AMB_HOSP]: {
-            [Accommodation.ENFERMARIA]: {
-                 // Placeholder or Copart Total values if available
-                 withOdonto: [164.44, 217.06, 249.62, 279.58, 293.57, 331.73, 404.71, 558.50, 754.00, 980.17], // Estimated from ratio
-                 withoutOdonto: [189.94, 250.73, 288.34, 322.94, 339.08, 383.16, 467.45, 645.08, 870.89, 1132.13]
-            },
-            [Accommodation.APARTAMENTO]: {
-                withOdonto: [246.66, 325.60, 374.43, 419.37, 440.33, 497.58, 607.03, 837.70, 1130.91, 1470.18],
-                withoutOdonto: [272.16, 359.27, 413.15, 462.73, 485.84, 549.01, 669.77, 924.28, 1247.80, 1622.14]
-            }
-        }
-    }
   }
 };
 
-// --- LONDRINA PRICES (INDIVIDUAL ONLY) ---
 const LONDRINA_INDIVIDUAL = {
   [CopartType.PARCIAL]: {
     [PlanType.NOSSO_PLANO]: {
@@ -252,7 +231,6 @@ const LONDRINA_INDIVIDUAL = {
   }
 };
 
-// --- BALNEÁRIO CAMBORIÚ / JOINVILLE PRICES (INDIVIDUAL ONLY) ---
 const BC_INDIVIDUAL = {
   [CopartType.PARCIAL]: {
     [PlanType.NOSSO_PLANO]: {
@@ -314,21 +292,454 @@ const BC_INDIVIDUAL = {
   }
 };
 
-export const PRICES: Record<Region, Record<string, any>> = {
-  [Region.CURITIBA]: {
-    [ContractType.PME]: CURITIBA_PME,
-    [ContractType.INDIVIDUAL]: CURITIBA_INDIVIDUAL
+const JOINVILLE_INDIVIDUAL = {
+  [CopartType.PARCIAL]: {
+    [PlanType.NOSSO_PLANO]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.SEM_ACOM]: {
+            withOdonto: [132.98, 175.54, 201.72, 226.09, 237.38, 268.17, 327.19, 451.52, 609.61, 792.61],
+            withoutOdonto: [150.83, 199.10, 228.80, 256.44, 269.24, 304.17, 371.11, 512.13, 691.43, 899.00]
+        },
+        [Accommodation.ENFERMARIA]: {
+            withOdonto: [202.10, 266.78, 306.77, 343.79, 360.96, 407.78, 497.47, 686.47, 926.82, 1204.93],
+            withoutOdonto: [229.23, 302.58, 347.94, 389.94, 409.41, 462.51, 564.24, 778.61, 1051.23, 1366.67]
+        },
+        [Accommodation.APARTAMENTO]: {
+            withOdonto: [303.18, 400.20, 460.24, 515.47, 541.24, 611.59, 746.11, 1029.62, 1390.07, 1807.14],
+            withoutOdonto: [343.88, 453.91, 522.02, 584.65, 613.89, 693.68, 846.25, 1167.82, 1576.61, 2049.68]
+        }
+      },
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: {
+            withOdonto: [252.62, 333.46, 383.49, 429.51, 450.97, 509.58, 621.67, 857.88, 1158.23, 1505.76],
+            withoutOdonto: [286.53, 378.21, 434.95, 487.16, 511.50, 577.98, 705.12, 973.03, 1313.70, 1707.88]
+        },
+        [Accommodation.APARTAMENTO]: {
+            withOdonto: [378.93, 500.19, 575.23, 644.26, 676.45, 764.37, 932.51, 1286.81, 1737.32, 2258.58],
+            withoutOdonto: [429.79, 567.33, 652.44, 730.74, 767.25, 866.97, 1057.67, 1459.54, 1970.51, 2561.74]
+        }
+      }
+    },
+    [PlanType.NOSSO_MEDICO]: {
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: {
+            withOdonto: [273.46, 360.93, 415.09, 464.93, 488.15, 551.64, 672.98, 928.74, 1253.91, 1629.94],
+            withoutOdonto: [310.16, 409.37, 470.80, 527.33, 553.66, 625.68, 763.29, 1053.39, 1422.18, 1848.71]
+        },
+        [Accommodation.APARTAMENTO]: {
+            withOdonto: [379.15, 500.48, 575.56, 644.63, 676.84, 764.81, 933.05, 1287.56, 1738.32, 2259.87],
+            withoutOdonto: [430.03, 567.65, 652.81, 731.16, 767.70, 867.47, 1058.29, 1460.39, 1971.66, 2563.21]
+        }
+      }
+    }
+  }
+};
+
+const JOINVILLE_PME = {
+    [CopartType.PARCIAL]: {
+      [PlanType.NOSSO_PLANO]: {
+        [Segmentation.AMB]: {
+            [Accommodation.SEM_ACOM]: [97.68, 128.94, 148.21, 166.12, 174.41, 197.03, 240.39, 331.73, 447.85, 582.24]
+        },
+        [Segmentation.AMB_HOSP]: {
+            [Accommodation.ENFERMARIA]: [148.45, 195.96, 225.31, 252.54, 265.15, 299.52, 365.44, 504.29, 680.82, 885.12],
+            [Accommodation.APARTAMENTO]: [222.70, 293.97, 338.01, 378.86, 397.78, 449.46, 548.33, 756.70, 1021.59, 1328.12]
+        },
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [185.56, 244.95, 281.65, 315.69, 331.46, 374.42, 456.80, 630.37, 851.03, 1106.38],
+            [Accommodation.APARTAMENTO]: [278.38, 367.46, 422.51, 473.59, 497.24, 561.83, 685.42, 945.88, 1276.97, 1660.11]
+        }
+      },
+      [PlanType.NOSSO_MEDICO]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [199.50, 263.34, 302.80, 339.40, 356.36, 402.54, 491.10, 677.71, 914.93, 1189.43],
+            [Accommodation.APARTAMENTO]: [277.36, 366.12, 420.98, 471.86, 495.43, 559.79, 682.93, 942.44, 1272.33, 1654.08]
+        }
+      }
+    },
+    [CopartType.TOTAL]: {
+        [PlanType.NOSSO_PLANO]: {
+            [Segmentation.AMB]: {
+                [Accommodation.SEM_ACOM]: [60.78, 80.23, 92.22, 103.37, 108.53, 122.60, 149.58, 206.41, 278.67, 362.30]
+            },
+            [Segmentation.AMB_HOSP]: {
+                [Accommodation.ENFERMARIA]: [92.37, 121.94, 140.20, 157.15, 165.00, 186.38, 227.40, 313.81, 423.65, 550.79],
+                [Accommodation.APARTAMENTO]: [138.58, 182.93, 210.32, 235.75, 247.52, 279.67, 341.20, 470.86, 635.69, 826.42]
+            },
+            [Segmentation.AMB_HOSP_OBST]: {
+                [Accommodation.ENFERMARIA]: [115.46, 152.42, 175.26, 196.44, 206.25, 232.98, 284.24, 392.25, 529.55, 688.46],
+                [Accommodation.APARTAMENTO]: [173.23, 228.66, 262.91, 294.70, 309.42, 349.61, 426.53, 588.60, 794.63, 1033.06]
+            }
+        }
+    }
+};
+
+// ================= MEDSÊNIOR =================
+const MEDSENIOR_PME = {
+  [CopartType.SEM_COPART]: {
+    [PlanType.ESSENCIAL]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.ENFERMARIA]: [0, 0, 0, 0, 0, 0, 0, 499.62, 599.54, 785.40]
+      }
+    },
+    [PlanType.PR3]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.ENFERMARIA]: [0, 0, 0, 0, 0, 0, 0, 569.75, 683.70, 895.65]
+      }
+    },
+    [PlanType.PR4]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.APARTAMENTO]: [0, 0, 0, 0, 0, 0, 0, 712.19, 854.63, 1119.57]
+      }
+    },
+    [PlanType.BLACK]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.APARTAMENTO]: [0, 0, 0, 0, 0, 0, 0, 1205.92, 1447.10, 1895.70]
+      }
+    }
+  }
+};
+
+const MEDSENIOR_CORPORATE = {
+  [CopartType.SEM_COPART]: {
+    [PlanType.PR3]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.ENFERMARIA]: [0, 0, 0, 0, 0, 0, 0, 512.78, 615.34, 806.10]
+      }
+    },
+    [PlanType.PR4]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.APARTAMENTO]: [0, 0, 0, 0, 0, 0, 0, 640.97, 769.16, 1007.60]
+      }
+    },
+    [PlanType.BLACK]: {
+      [Segmentation.AMB_HOSP]: {
+        [Accommodation.APARTAMENTO]: [0, 0, 0, 0, 0, 0, 0, 1085.34, 1302.41, 1706.16]
+      }
+    }
+  }
+};
+
+// ================= MEDSUL =================
+const MEDSUL_PME_30 = {
+  [CopartType.COPART_30]: {
+    [PlanType.EXECUTIVE_DIRECT]: {
+      [Segmentation.AMB_HOSP_SEM_OBST]: {
+        [Accommodation.ENFERMARIA]: [95.49, 106.94, 122.98, 141.43, 162.64, 187.04, 243.17, 323.40, 430.12, 572.04]
+      },
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [119.36, 133.68, 153.73, 176.78, 203.30, 233.80, 303.96, 404.25, 537.65, 715.06]
+      }
+    },
+    [PlanType.EXECUTIVE_PERFECT]: {
+      [Segmentation.AMB_HOSP_SEM_OBST]: {
+        [Accommodation.ENFERMARIA]: [107.30, 120.17, 138.19, 158.92, 182.76, 210.18, 273.25, 363.41, 483.33, 642.81],
+        [Accommodation.APARTAMENTO]: [134.12, 150.21, 172.74, 198.65, 228.46, 262.73, 341.56, 454.26, 604.17, 803.52]
+      },
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [134.12, 150.21, 172.74, 198.65, 228.46, 262.73, 341.56, 454.26, 604.17, 803.52],
+        [Accommodation.APARTAMENTO]: [167.65, 187.77, 215.93, 248.32, 285.57, 328.41, 426.95, 567.82, 755.21, 1004.40]
+      }
+    },
+    [PlanType.EXECUTIVE_PREMIUM]: {
+      [Segmentation.AMB_HOSP_SEM_OBST]: {
+        [Accommodation.ENFERMARIA]: [133.68, 149.71, 172.17, 197.99, 227.69, 261.85, 340.42, 452.75, 602.15, 800.84],
+        [Accommodation.APARTAMENTO]: [167.10, 187.14, 215.21, 247.49, 284.62, 327.31, 425.53, 565.93, 752.69, 924.05]
+      },
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [167.10, 187.14, 215.21, 247.49, 284.62, 327.31, 425.53, 565.93, 752.69, 1001.05],
+        [Accommodation.APARTAMENTO]: [208.87, 233.93, 269.01, 309.36, 355.77, 409.14, 531.91, 707.41, 940.86, 1155.06]
+      }
+    }
   },
-  [Region.MARINGA]: {
-    [ContractType.PME]: CURITIBA_PME, // Placeholder - Disable PME in UI for now if different
-    [ContractType.INDIVIDUAL]: MARINGA_INDIVIDUAL
+  [CopartType.COPART_50]: {
+    [PlanType.EXECUTIVE_DIRECT]: {
+        [Segmentation.AMB_HOSP_SEM_OBST]: {
+            [Accommodation.ENFERMARIA]: [79.57, 89.12, 102.48, 117.86, 135.54, 155.87, 202.64, 269.50, 358.43, 476.70]
+        },
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [99.46, 111.40, 128.10, 147.32, 169.42, 194.83, 253.30, 336.87, 448.04, 595.88]
+        }
+    },
+    [PlanType.EXECUTIVE_PERFECT]: {
+        [Segmentation.AMB_HOSP_SEM_OBST]: {
+            [Accommodation.ENFERMARIA]: [89.42, 100.14, 115.16, 132.44, 152.30, 175.15, 227.71, 302.84, 402.78, 535.68],
+            [Accommodation.APARTAMENTO]: [111.77, 125.18, 143.95, 165.54, 190.38, 218.94, 284.63, 378.55, 503.47, 669.60]
+        },
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [111.77, 125.18, 143.95, 165.54, 190.38, 218.94, 284.63, 378.55, 503.47, 669.60],
+            [Accommodation.APARTAMENTO]: [139.71, 156.47, 179.94, 206.93, 237.97, 273.67, 355.79, 473.19, 629.34, 837.00]
+        }
+    },
+    [PlanType.EXECUTIVE_PREMIUM]: {
+        [Segmentation.AMB_HOSP_SEM_OBST]: {
+            [Accommodation.ENFERMARIA]: [111.40, 124.76, 143.47, 164.99, 189.74, 218.21, 283.69, 377.29, 501.79, 667.37],
+            [Accommodation.APARTAMENTO]: [139.25, 155.95, 179.34, 206.24, 237.18, 272.76, 354.61, 471.61, 627.24, 770.04]
+        },
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [139.25, 155.95, 179.34, 206.24, 237.18, 272.76, 354.61, 471.61, 627.24, 834.21],
+            [Accommodation.APARTAMENTO]: [174.06, 194.94, 224.18, 257.80, 296.48, 340.95, 443.26, 589.51, 784.05, 962.55]
+        }
+    }
+  }
+};
+
+// ================= NOSSA SAUDE =================
+const NOSSA_SAUDE_INDIV = {
+  [CopartType.COPART_20]: { // CCP 21 is assumed ~20% or specific fixed
+    [PlanType.VIDA_LEVE]: {
+      [Segmentation.AMB_HOSP_SEM_OBST]: {
+        [Accommodation.ENFERMARIA]: [207.66, 229.22, 269.37, 325.96, 355.75, 430.21, 550.67, 672.36, 847.18, 1192.90],
+        [Accommodation.APARTAMENTO]: [269.95, 297.98, 350.19, 423.75, 462.48, 559.27, 715.87, 874.07, 1101.33, 1550.77]
+      },
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [244.92, 270.35, 317.72, 384.47, 419.60, 507.42, 649.50, 793.04, 999.22, 1406.99],
+        [Accommodation.APARTAMENTO]: [318.40, 351.46, 413.04, 499.80, 545.48, 659.64, 844.35, 1030.95, 1298.99, 1829.09]
+      }
+    }
   },
-  [Region.LONDRINA]: {
-    [ContractType.PME]: CURITIBA_PME, // Placeholder
-    [ContractType.INDIVIDUAL]: LONDRINA_INDIVIDUAL
+  [CopartType.COPART_50]: { // CCP 50 - usually cheaper
+    [PlanType.VIDA_LEVE]: {
+      [Segmentation.AMB_HOSP_SEM_OBST]: {
+        [Accommodation.ENFERMARIA]: [173.05, 191.01, 224.48, 271.64, 296.46, 358.51, 458.89, 560.30, 705.98, 994.08],
+        [Accommodation.APARTAMENTO]: [224.96, 248.32, 291.82, 353.13, 385.40, 466.06, 596.56, 728.39, 917.78, 1292.31]
+      },
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [204.10, 225.29, 264.77, 320.39, 349.67, 422.85, 541.25, 660.86, 832.69, 1172.49],
+        [Accommodation.APARTAMENTO]: [265.33, 292.88, 344.20, 416.50, 454.57, 549.70, 703.63, 859.12, 1082.49, 1524.24]
+      }
+    }
+  }
+};
+
+const NOSSA_SAUDE_PME = {
+  [CopartType.COPART_20]: {
+    [PlanType.LIDER_100]: {
+        [Segmentation.AMB_HOSP_SEM_OBST]: {
+            [Accommodation.ENFERMARIA]: [144.24, 161.56, 185.79, 217.37, 254.32, 297.55, 386.81, 483.52, 638.24, 865.45],
+            [Accommodation.APARTAMENTO]: [187.52, 210.02, 241.52, 282.58, 330.62, 386.82, 502.85, 628.57, 829.71, 1125.09]
+        }
+    },
+    [PlanType.LIDER_200]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [165.52, 185.39, 213.19, 249.43, 291.83, 341.44, 443.87, 554.83, 732.38, 993.11],
+            [Accommodation.APARTAMENTO]: [215.18, 241.00, 277.15, 324.26, 379.38, 443.87, 577.02, 721.29, 952.10, 1291.04]
+        }
+    }
   },
-  [Region.JOINVILLE_BC]: {
-    [ContractType.PME]: CURITIBA_PME, // Placeholder
-    [ContractType.INDIVIDUAL]: BC_INDIVIDUAL
+  [CopartType.COPART_50]: {
+    [PlanType.LIDER_100]: {
+        [Segmentation.AMB_HOSP_SEM_OBST]: {
+            [Accommodation.ENFERMARIA]: [110.55, 123.82, 142.39, 166.59, 194.91, 228.04, 296.45, 370.56, 489.14, 663.27],
+            [Accommodation.APARTAMENTO]: [143.71, 160.96, 185.10, 216.57, 253.38, 296.45, 385.38, 481.73, 635.88, 862.26]
+        }
+    },
+    [PlanType.LIDER_200]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [126.85, 142.08, 163.39, 191.16, 223.66, 261.68, 340.17, 425.22, 561.29, 761.11],
+            [Accommodation.APARTAMENTO]: [164.91, 184.70, 212.40, 248.51, 290.76, 340.18, 442.23, 552.79, 729.68, 989.44]
+        }
+    }
+  }
+};
+
+// ================= PARANÁ CLÍNICAS =================
+const PARANA_PME = {
+  [CopartType.COPART_30]: {
+    [PlanType.STANDARD_PLUS]: {
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [146.36, 162.46, 188.45, 218.60, 257.95, 304.38, 359.17, 448.96, 597.11, 865.81],
+        [Accommodation.APARTAMENTO]: [164.60, 182.71, 211.94, 245.85, 290.10, 342.32, 403.94, 504.92, 671.54, 973.73]
+      }
+    },
+    [PlanType.EXECUTIVO_PLUS]: {
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [188.62, 209.37, 242.86, 281.72, 332.43, 392.27, 462.88, 578.60, 769.53, 1115.81],
+        [Accommodation.APARTAMENTO]: [212.20, 235.54, 273.22, 316.94, 373.99, 441.30, 520.74, 650.92, 865.72, 1255.29]
+      }
+    },
+    [PlanType.ESTILO]: {
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [212.75, 236.15, 273.94, 317.77, 374.97, 442.46, 522.11, 652.63, 868.00, 1258.60],
+        [Accommodation.APARTAMENTO]: [239.35, 265.67, 308.18, 357.49, 421.84, 497.77, 587.37, 734.21, 976.50, 1415.93]
+      }
+    }
+  },
+  [CopartType.COPART_50]: {
+    [PlanType.STANDARD_PLUS]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+          [Accommodation.ENFERMARIA]: [129.78, 144.05, 167.10, 193.84, 228.73, 269.90, 318.48, 398.10, 529.47, 767.72],
+          [Accommodation.APARTAMENTO]: [145.95, 162.01, 187.93, 218.00, 257.24, 303.54, 358.18, 447.72, 595.46, 863.42]
+        }
+    },
+    [PlanType.EXECUTIVO_PLUS]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+          [Accommodation.ENFERMARIA]: [167.24, 185.63, 215.33, 249.79, 294.75, 347.80, 410.41, 513.01, 682.30, 989.34],
+          [Accommodation.APARTAMENTO]: [188.14, 208.84, 242.25, 281.01, 331.60, 391.28, 461.71, 577.14, 767.59, 1113.00]
+        }
+    },
+    [PlanType.ESTILO]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+          [Accommodation.ENFERMARIA]: [188.64, 209.39, 242.89, 281.75, 332.47, 392.31, 462.93, 578.66, 769.61, 1115.94],
+          [Accommodation.APARTAMENTO]: [212.22, 235.56, 273.25, 316.97, 374.02, 441.35, 520.79, 650.99, 865.82, 1255.43]
+        }
+    }
+  }
+};
+
+// ================= SELECT =================
+const SELECT_INDIV = {
+  [CopartType.PARCIAL]: { // 100 & 200
+    [PlanType.SELECT_100]: {
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.ENFERMARIA]: [298.30, 321.36, 361.16, 408.27, 463.93, 541.71, 700.54, 907.16, 1175.99, 1528.21]
+      }
+    },
+    [PlanType.SELECT_200]: {
+      [Segmentation.AMB_HOSP_OBST]: {
+        [Accommodation.APARTAMENTO]: [370.35, 399.15, 448.92, 507.80, 577.38, 674.59, 873.13, 1131.43, 1467.48, 1907.76]
+      }
+    }
+  }
+};
+
+const SELECT_PME = {
+  [CopartType.PARCIAL]: {
+    [PlanType.SELECT_100]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [199.28, 214.69, 241.27, 272.74, 309.93, 361.89, 467.99, 606.03, 785.63, 1020.93]
+        }
+    },
+    [PlanType.SELECT_200]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.APARTAMENTO]: [247.41, 266.66, 299.91, 339.25, 385.72, 450.67, 583.31, 755.86, 980.37, 1274.48]
+        }
+    }
+  }
+};
+
+// ================= UNIMED =================
+// Using the "Vital/Tramontina" tables which seem to be PME/Adesão
+const UNIMED_PME = {
+  [CopartType.COPART_30]: {
+    [PlanType.FLEX]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [327.88, 389.30, 432.56, 489.53, 522.23, 590.19, 662.03, 748.95, 834.78, 1251.51], // Flex 1 30%
+            [Accommodation.APARTAMENTO]: [458.83, 540.50, 655.77, 747.45, 819.28, 882.69, 967.60, 1201.28, 1389.52, 1830.41]
+        }
+    },
+    [PlanType.PLENO_UNIMED]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [229.42, 272.39, 302.65, 351.38, 416.36, 470.68, 524.02, 609.31, 695.39, 1110.75],
+            [Accommodation.APARTAMENTO]: [308.28, 367.06, 412.95, 470.68, 515.91, 555.84, 653.22, 756.46, 875.00, 1469.62]
+        }
+    }
+  },
+  [CopartType.COPART_50]: {
+    [PlanType.FLEX]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [288.67, 344.78, 348.51, 397.13, 430.75, 499.82, 557.10, 631.60, 788.12, 1059.45],
+            [Accommodation.APARTAMENTO]: [430.97, 508.74, 491.22, 538.43, 580.10, 635.91, 789.48, 913.19, 1202.95, 1533.76]
+        }
+    },
+    [PlanType.AMIGO]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [345.54, 464.40, 375.95, 434.11, 488.11, 561.08, 632.45, 783.42, 982.02, 1230.86],
+            [Accommodation.APARTAMENTO]: [505.27, 617.78, 564.54, 690.68, 777.01, 833.58, 972.62, 1094.19, 1294.56, 1639.43]
+        }
+    },
+    [PlanType.PLENO_UNIMED]: {
+        [Segmentation.AMB_HOSP_OBST]: {
+            [Accommodation.ENFERMARIA]: [183.54, 230.94, 252.50, 280.91, 317.79, 354.21, 421.72, 501.96, 580.62, 975.18],
+            [Accommodation.APARTAMENTO]: [274.02, 344.78, 312.33, 342.34, 368.84, 404.32, 501.96, 580.62, 764.85, 1224.24]
+        }
+    }
+  }
+};
+
+export const PRICES: Record<Operator, Record<Region, Record<string, any>>> = {
+  [Operator.HAPVIDA]: {
+    [Region.CURITIBA]: {
+      [ContractType.PME]: CURITIBA_PME,
+      [ContractType.INDIVIDUAL]: CURITIBA_INDIVIDUAL
+    },
+    [Region.MARINGA]: {
+      [ContractType.PME]: CURITIBA_PME, // Placeholder
+      [ContractType.INDIVIDUAL]: MARINGA_INDIVIDUAL
+    },
+    [Region.LONDRINA]: {
+      [ContractType.PME]: CURITIBA_PME, // Placeholder
+      [ContractType.INDIVIDUAL]: LONDRINA_INDIVIDUAL
+    },
+    [Region.BALNEARIO_CAMBORIU]: {
+      [ContractType.PME]: CURITIBA_PME, // Placeholder
+      [ContractType.INDIVIDUAL]: BC_INDIVIDUAL
+    },
+    [Region.JOINVILLE]: {
+      [ContractType.PME]: JOINVILLE_PME,
+      [ContractType.INDIVIDUAL]: JOINVILLE_INDIVIDUAL
+    }
+  },
+  [Operator.MEDSENIOR]: {
+    [Region.CURITIBA]: {
+      [ContractType.INDIVIDUAL]: MEDSENIOR_PME, // Reusing PME table for Simplicity as Indiv structure is similar in prices usually, but mapped to Sem Copart
+      [ContractType.PME]: {
+          [CopartType.SEM_COPART]: MEDSENIOR_CORPORATE[CopartType.SEM_COPART]
+      }
+    },
+    [Region.MARINGA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }, // Default empty
+    [Region.LONDRINA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.BALNEARIO_CAMBORIU]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.JOINVILLE]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }
+  },
+  [Operator.MEDSUL]: {
+    [Region.CURITIBA]: {
+      [ContractType.PME]: MEDSUL_PME_30,
+      [ContractType.INDIVIDUAL]: {} // Not provided
+    },
+    [Region.MARINGA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.LONDRINA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.BALNEARIO_CAMBORIU]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.JOINVILLE]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }
+  },
+  [Operator.NOSSA_SAUDE]: {
+    [Region.CURITIBA]: {
+      [ContractType.PME]: NOSSA_SAUDE_PME,
+      [ContractType.INDIVIDUAL]: NOSSA_SAUDE_INDIV
+    },
+    [Region.MARINGA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.LONDRINA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.BALNEARIO_CAMBORIU]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.JOINVILLE]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }
+  },
+  [Operator.PARANA_CLINICAS]: {
+    [Region.CURITIBA]: {
+      [ContractType.PME]: PARANA_PME,
+      [ContractType.INDIVIDUAL]: {}
+    },
+    [Region.MARINGA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.LONDRINA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.BALNEARIO_CAMBORIU]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.JOINVILLE]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }
+  },
+  [Operator.SELECT]: {
+    [Region.CURITIBA]: {
+      [ContractType.PME]: SELECT_PME,
+      [ContractType.INDIVIDUAL]: SELECT_INDIV
+    },
+    [Region.MARINGA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.LONDRINA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.BALNEARIO_CAMBORIU]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.JOINVILLE]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }
+  },
+  [Operator.UNIMED]: {
+    [Region.CURITIBA]: {
+      [ContractType.PME]: UNIMED_PME,
+      [ContractType.INDIVIDUAL]: {}
+    },
+    [Region.MARINGA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.LONDRINA]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.BALNEARIO_CAMBORIU]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} },
+    [Region.JOINVILLE]: { [ContractType.PME]: {}, [ContractType.INDIVIDUAL]: {} }
   }
 };

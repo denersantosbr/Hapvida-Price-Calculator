@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Beneficiary, PlanSelection, ContractType } from '../types';
+import { Beneficiary, PlanSelection, ContractType, Operator } from '../types';
 import { PRICES, ADESAO_FEE, ODONTO_PRICE_PME, ODONTO_PRICE_INDIVIDUAL_PROMO, AGE_RANGES } from '../constants';
 import { Calculator, Users, FileDown, CheckCircle2, ToggleLeft, ToggleRight, PlusCircle, HeartPulse } from 'lucide-react';
 import { jsPDF } from "jspdf";
@@ -11,11 +11,12 @@ interface SummaryProps {
 }
 
 const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
-  const { copartType, planType, segmentation, accommodation, applyDiscount, contractType, includeOdonto, region } = selection;
+  const { copartType, planType, segmentation, accommodation, applyDiscount, contractType, includeOdonto, region, operator } = selection;
   const [includeAdesao, setIncludeAdesao] = useState(false);
 
-  // Determine correct price array based on Region -> Contract -> Copart -> Plan -> Seg -> Accom
-  const regionPrices = PRICES[region];
+  // Determine correct price array
+  const opPrices = PRICES[operator];
+  const regionPrices = opPrices?.[region];
   const rootPrices = regionPrices?.[contractType];
   const copartPrices = rootPrices?.[copartType];
   const planPrices = copartPrices?.[planType];
@@ -24,9 +25,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
 
   let pricesArray: number[] = [];
   
-  if (contractType === ContractType.INDIVIDUAL) {
-      // For individual, prices depend on whether Odonto is included (Medica 1 vs Medica 2)
-      // Note: "withOdonto" means Discounted Health Table (Medica 1)
+  if (operator === Operator.HAPVIDA && contractType === ContractType.INDIVIDUAL) {
       pricesArray = includeOdonto ? accPrices?.withOdonto : accPrices?.withoutOdonto;
   } else {
       pricesArray = accPrices;
@@ -36,18 +35,26 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
 
   const calculateCost = (ageIndex: number) => {
     let price = pricesArray[ageIndex] || 0;
-    if (applyDiscount) {
-      price = price * 0.85; // 15% discount
+    
+    // MedSenior Specific Logic: If price is 0 (underage in OCR table), it returns 0.
+    // Hapvida Discount
+    if (operator === Operator.HAPVIDA && applyDiscount) {
+      price = price * 0.85; 
     }
+    // Select Discount
+    if (operator === Operator.SELECT && applyDiscount) {
+        price = price * 0.95; // 5% discount
+    }
+
     return price;
   };
 
   // Calculate Health Total
   const healthTotalMonthly = beneficiaries.reduce((acc, curr) => acc + calculateCost(curr.ageRangeIndex), 0);
   
-  // Calculate Odonto Total
+  // Calculate Odonto Total (Hapvida Only for now)
   let odontoPricePerLife = 0;
-  if (includeOdonto) {
+  if (operator === Operator.HAPVIDA && includeOdonto) {
       odontoPricePerLife = contractType === ContractType.INDIVIDUAL ? ODONTO_PRICE_INDIVIDUAL_PROMO : ODONTO_PRICE_PME;
   }
   const odontoTotal = beneficiaries.length * odontoPricePerLife;
@@ -74,7 +81,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     doc.setFontSize(22);
     doc.setTextColor(37, 99, 235);
     doc.setFont("helvetica", "bold");
-    doc.text("Hapvida", 14, 20);
+    doc.text(operator, 14, 20);
     
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -90,15 +97,19 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     doc.text("Resumo do Plano", 14, 50);
 
     const configData = [
+      ["Operadora", operator],
       ["Região", region],
       ["Tipo de Contratação", contractType],
       ["Modalidade", selection.copartType],
       ["Plano", selection.planType],
       ["Segmentação", selection.segmentation],
       ["Acomodação", selection.accommodation],
-      ["Tabela Promocional", selection.applyDiscount ? "SIM (15% OFF)" : "NÃO"],
-      ["Plano Odontológico", selection.includeOdonto ? "INCLUSO" : "NÃO"]
+      ["Tabela Promocional", selection.applyDiscount ? "SIM" : "NÃO"],
     ];
+
+    if (operator === Operator.HAPVIDA) {
+        configData.push(["Plano Odontológico", selection.includeOdonto ? "INCLUSO" : "NÃO"]);
+    }
 
     autoTableFn(doc, {
       startY: 55,
@@ -155,7 +166,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     doc.text(fmt(healthTotalMonthly), rightMargin, currentY, { align: 'right' });
     currentY += 6;
 
-    if (includeOdonto) {
+    if (includeOdonto && operator === Operator.HAPVIDA) {
         doc.text(`Odonto Mensal:`, 130, currentY, { align: 'right' });
         doc.text(fmt(odontoTotal), rightMargin, currentY, { align: 'right' });
         currentY += 6;
@@ -186,8 +197,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     const footerText = [
       "__________________________________________________________________________",
       "Valores sujeitos a alteração conforme regras da operadora e ANS.",
-      "Proposta válida para: " + region,
-      "ANS - nº 34.078-2 | Hapvida Assistência Médica"
+      "Proposta gerada automaticamente.",
     ];
     
     let footerY = 270;
@@ -196,7 +206,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
       footerY += 5;
     });
 
-    doc.save(`Proposta_Hapvida_${region}.pdf`);
+    doc.save(`Proposta_${operator}_${region}.pdf`);
   };
 
   return (
@@ -220,10 +230,10 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
                 {applyDiscount && (
                     <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded text-xs font-bold border border-emerald-500/30">
                         <CheckCircle2 size={12} />
-                        15% Desconto
+                        Desconto Aplicado
                     </div>
                 )}
-                 {includeOdonto && (
+                 {includeOdonto && operator === Operator.HAPVIDA && (
                     <div className="inline-flex items-center gap-1.5 bg-pink-500/20 text-pink-300 px-2 py-1 rounded text-xs font-bold border border-pink-500/30">
                         <HeartPulse size={12} />
                         Odonto
@@ -289,7 +299,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
                                 <div className="text-right">
                                     <div className="font-bold text-slate-700 text-sm">{fmt(totalItem)}</div>
                                     <div className="text-[10px] text-slate-400">
-                                        {includeOdonto ? 'Saúde + Odonto' : 'Apenas Saúde'}
+                                        {includeOdonto && operator === Operator.HAPVIDA ? 'Saúde + Odonto' : 'Apenas Saúde'}
                                     </div>
                                 </div>
                             </div>
@@ -307,7 +317,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
                     <span className="text-slate-500">Saúde</span>
                     <span className="font-medium text-slate-700">{fmt(healthTotalMonthly)}</span>
                 </div>
-                {includeOdonto && (
+                {includeOdonto && operator === Operator.HAPVIDA && (
                      <div className="flex justify-between">
                         <span className="text-slate-500">Odonto ({beneficiaries.length}x)</span>
                         <span className="font-medium text-slate-700">{fmt(odontoTotal)}</span>

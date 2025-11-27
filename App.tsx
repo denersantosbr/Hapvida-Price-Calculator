@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PlanSelector from './components/PlanSelector';
 import BeneficiaryManager from './components/BeneficiaryManager';
 import Summary from './components/Summary';
-import { PlanSelection, Beneficiary, CopartType, PlanType, Segmentation, Accommodation, ContractType, Region } from './types';
+import { PlanSelection, Beneficiary, CopartType, PlanType, Segmentation, Accommodation, ContractType, Region, Operator } from './types';
 import { Activity, Lock, User, ArrowRight, KeyRound, LogOut } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -14,6 +14,7 @@ const App: React.FC = () => {
 
   // App State
   const [selection, setSelection] = useState<PlanSelection>({
+    operator: Operator.HAPVIDA,
     region: Region.CURITIBA,
     contractType: ContractType.PME,
     copartType: CopartType.TOTAL,
@@ -52,20 +53,8 @@ const App: React.FC = () => {
         <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-slate-200">
           <div className="bg-white border-b border-slate-100 p-8 text-center relative">
              <div className="relative z-10">
-                <div className="w-auto h-24 flex items-center justify-center mx-auto mb-4">
-                  <img 
-                    src="https://www.unipam.com.br/wp-content/uploads/2020/12/logo-unipam.png" 
-                    alt="Unipam Logo"
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                        e.currentTarget.src = "https://via.placeholder.com/150x80?text=Unipam+Logo";
-                        e.currentTarget.onerror = null;
-                    }}
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <h1 className="text-2xl font-bold text-slate-800 mb-1">Acesso Restrito</h1>
-                <p className="text-slate-500 text-sm">Simulador Hapvida Curitiba</p>
+                <h1 className="text-2xl font-bold text-slate-800 mb-1">Simulador Unipam</h1>
+                <p className="text-slate-500 text-sm">Acesso Restrito</p>
              </div>
           </div>
 
@@ -139,17 +128,17 @@ const App: React.FC = () => {
                     <Activity size={24} />
                 </div>
                 <div>
-                    <h1 className="text-xl font-bold leading-tight">Hapvida</h1>
+                    <h1 className="text-xl font-bold leading-tight">{selection.operator}</h1>
                     <p className="text-xs text-slate-500 font-medium tracking-wide uppercase">
-                        TABELA DE VENDAS {selection.region.split('-')[0].trim()}
+                        TABELA DE VENDAS
                     </p>
                 </div>
             </div>
             
             <div className="flex items-center gap-6">
               <div className="text-xs text-right text-slate-400 hidden sm:block">
-                  Vigência: 01/10/2025 - 31/12/2025<br/>
-                  ANS - nº 34.078-2
+                  Vigência: Outubro - Dezembro 2025<br/>
+                  Simulador Multicálculo
               </div>
               <button 
                 onClick={handleLogout}
@@ -172,7 +161,7 @@ const App: React.FC = () => {
                 
                 <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
                     <p className="text-sm text-blue-800">
-                        <strong>Instruções:</strong> Escolha a cidade correta. Para Individual, a inclusão do Plano Odontológico pode reduzir o valor da mensalidade de saúde (Tabela Médica 1).
+                        <strong>Instruções:</strong> Selecione a operadora desejada abaixo para iniciar a simulação. Hapvida permanece como principal.
                     </p>
                 </div>
 
@@ -191,11 +180,11 @@ const App: React.FC = () => {
                 <div className="text-xs text-slate-400 space-y-1 mt-8 p-4 border-t border-slate-200">
                     <p className="font-semibold">Notas Legais:</p>
                     <ul className="list-disc pl-4 space-y-1">
-                        <li>Taxa de adesão de R$ 15,00 por usuário.</li>
-                        <li>O desconto promocional de 15% (se aplicado) incide nas 3 primeiras parcelas.</li>
-                        <li><strong>Individual:</strong> Tabela com Odonto (Médica 1) aplicável mediante contratação conjunta.</li>
-                        <li><strong>PME:</strong> Tabela referente a planos Porte I (2 a 15 vidas) e Porte II (16 a 29 vidas).</li>
-                        <li>Valores sujeitos a alteração conforme regras da ANS e da operadora.</li>
+                        <li>Valores referenciam tabelas vigentes em Out/2025.</li>
+                        <li>Hapvida: Taxa de adesão de R$ 15,00 por usuário. Promoção 15% nas 3 primeiras.</li>
+                        <li>MedSênior: Foco em 49+ anos.</li>
+                        <li>Unimed: Tabelas PME.</li>
+                        <li>Valores sujeitos a alteração conforme regras da ANS e das operadoras.</li>
                     </ul>
                 </div>
             </div>
