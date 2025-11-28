@@ -1,5 +1,5 @@
 
-import { Operator, ContractType, PlanVariant } from './types';
+import { Operator, ContractType, PlanVariant, DentalPlan } from './types';
 
 export const AGE_RANGES = [
   "00 a 18 anos",
@@ -18,6 +18,34 @@ export const ADESAO_FEE = 25.00;
 
 // Helper
 const simplePrice = (prices: number[]) => [{ min_lives: 1, max_lives: 999, prices }];
+
+export const HAPVIDA_DENTAL_PLANS: DentalPlan[] = [
+  {
+    id: 'hap_dental_premium_pme',
+    operator: Operator.HAPVIDA,
+    contractType: ContractType.PME,
+    name: 'PREMIUM NACIONAL',
+    price: 22.36,
+    description: 'Cobertura Rol ANS Ampliado'
+  },
+  {
+    id: 'hap_dental_prot_total_pme',
+    operator: Operator.HAPVIDA,
+    contractType: ContractType.PME,
+    name: '+ODONTO PROTEÇÃO TOTAL',
+    price: 0.00,
+    description: 'Condicionado à contratação do Saúde PME',
+    warning: 'ATENÇÃO: Este plano possui REGIME MISTO DE PAGAMENTO. Cobertura básica incluída. Procedimentos complexos (canal, prótese, etc.) são pagos à parte conforme tabela CBHPO vigente.'
+  },
+  {
+    id: 'hap_dental_promo_ind',
+    operator: Operator.HAPVIDA,
+    contractType: ContractType.INDIVIDUAL,
+    name: 'ODONTO (Promo Saúde Integral)',
+    price: 24.50,
+    description: 'Valor promocional venda casada (Normal: R$ 75,84)'
+  }
+];
 
 export const ALL_PLANS: PlanVariant[] = [
   // ================= HAPVIDA =================

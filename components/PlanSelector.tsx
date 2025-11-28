@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { PlanSelection, Operator, ContractType } from '../types';
-import { ALL_PLANS } from '../constants';
-import { Building2, User, Check, ChevronRight, MapPin, Tag } from 'lucide-react';
+import { PlanSelection, Operator, ContractType, DentalPlan } from '../types';
+import { ALL_PLANS, HAPVIDA_DENTAL_PLANS } from '../constants';
+import { Building2, User, Check, ChevronRight, MapPin, Tag, Smile, AlertTriangle } from 'lucide-react';
 
 interface PlanSelectorProps {
   selection: PlanSelection;
@@ -46,21 +46,25 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
       )
     : [];
 
+  // 6. Get Dental Plans (Hapvida Specific)
+  const availableDentalPlans = (selection.operator === Operator.HAPVIDA && selection.contractType)
+    ? HAPVIDA_DENTAL_PLANS.filter(d => d.contractType === selection.contractType || d.contractType === 'BOTH')
+    : [];
+
   // Current selected variant full object
   const currentVariant = selection.selectedVariantId 
     ? ALL_PLANS.find(p => p.id === selection.selectedVariantId) 
     : null;
 
+  const currentDental = selection.dentalPlanId
+    ? HAPVIDA_DENTAL_PLANS.find(d => d.id === selection.dentalPlanId)
+    : null;
+
 
   // -- HANDLERS --
 
-  const resetSelection = (fields: Partial<PlanSelection>) => {
-    onChange({ ...selection, ...fields });
-  };
-
   const handleOperatorSelect = (op: Operator) => {
     const regions = Array.from(new Set(ALL_PLANS.filter(p => p.operator === op).map(p => p.region)));
-    // Auto-select region if only 1
     const defaultRegion = regions.length === 1 ? regions[0] : null;
     
     onChange({
@@ -69,20 +73,20 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
       contractType: null,
       planName: null,
       selectedVariantId: null,
+      dentalPlanId: null,
       applyDiscount: false
     });
   };
 
   const handleRegionSelect = (reg: string) => {
-    onChange({ ...selection, region: reg, contractType: null, planName: null, selectedVariantId: null });
+    onChange({ ...selection, region: reg, contractType: null, planName: null, selectedVariantId: null, dentalPlanId: null });
   };
 
   const handleContractSelect = (ct: ContractType) => {
-    onChange({ ...selection, contractType: ct, planName: null, selectedVariantId: null });
+    onChange({ ...selection, contractType: ct, planName: null, selectedVariantId: null, dentalPlanId: null });
   };
 
   const handlePlanSelect = (pn: string) => {
-    // Filter variants for this plan
     const variants = ALL_PLANS.filter(p => 
       p.operator === selection.operator && 
       p.region === selection.region && 
@@ -90,11 +94,10 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
       p.planName === pn
     );
     
-    // Auto select if only 1 variant exists
     if (variants.length === 1) {
       onChange({ ...selection, planName: pn, selectedVariantId: variants[0].id });
     } else {
-      onChange({ ...selection, planName: pn, selectedVariantId: variants[0].id }); // Default to first, let user switch details
+      onChange({ ...selection, planName: pn, selectedVariantId: variants[0].id });
     }
   };
 
@@ -104,6 +107,14 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
 
   const toggleDiscount = () => {
     onChange({ ...selection, applyDiscount: !selection.applyDiscount });
+  };
+
+  const handleDentalSelect = (id: string) => {
+    if (selection.dentalPlanId === id) {
+      onChange({ ...selection, dentalPlanId: null }); // Deselect
+    } else {
+      onChange({ ...selection, dentalPlanId: id });
+    }
   };
 
   return (
@@ -129,7 +140,7 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
         </div>
       </div>
 
-      {/* 2. REGIAO (Only if operator selected and > 1 region available, or explicit region selection needed) */}
+      {/* 2. REGIAO */}
       {selection.operator && (
         <div className="animate-in fade-in slide-in-from-left-2 duration-300">
            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">2. Região / Cidade</label>
@@ -219,7 +230,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
             </h4>
             
             <div className="space-y-4">
-                {/* Accommodation Selection if multiple exists or display current */}
                 <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-2">Acomodação</label>
                     <div className="flex flex-wrap gap-2">
@@ -240,7 +250,6 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
                     </div>
                 </div>
 
-                {/* Discount Toggle for Hapvida */}
                 {currentVariant?.discountAvailable && (
                     <div className="pt-3 border-t border-slate-200 mt-3">
                         <button 
@@ -262,6 +271,56 @@ const PlanSelector: React.FC<PlanSelectorProps> = ({ selection, onChange, benefi
                     </div>
                 )}
             </div>
+        </div>
+      )}
+
+      {/* 6. PLANO ODONTOLOGICO (HAPVIDA SPECIFIC) */}
+      {selection.selectedVariantId && availableDentalPlans.length > 0 && (
+        <div className="animate-in fade-in slide-in-from-left-2 duration-300 delay-200 bg-indigo-50 p-5 rounded-xl border border-indigo-100">
+            <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Smile size={14} />
+                6. Plano Odontológico
+            </h4>
+            
+            <div className="space-y-3">
+                {availableDentalPlans.map(plan => {
+                    const isSelected = selection.dentalPlanId === plan.id;
+                    return (
+                        <button
+                            key={plan.id}
+                            onClick={() => handleDentalSelect(plan.id)}
+                            className={`w-full p-4 rounded-xl border text-left transition-all relative ${
+                                isSelected 
+                                ? 'bg-white border-indigo-500 shadow-md ring-1 ring-indigo-500/20' 
+                                : 'bg-white/50 border-indigo-200 hover:bg-white hover:border-indigo-300'
+                            }`}
+                        >
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-slate-800 text-sm">{plan.name}</div>
+                                    <div className="text-xs text-slate-500 mt-1">{plan.description}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className={`text-sm font-bold ${plan.price === 0 ? 'text-green-600' : 'text-slate-700'}`}>
+                                        {plan.price === 0 ? 'GRATUITO' : `R$ ${plan.price.toFixed(2).replace('.', ',')}`}
+                                    </div>
+                                    {isSelected && <Check size={16} className="text-indigo-600 ml-auto mt-1"/>}
+                                </div>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* WARNING FOR REGIME MISTO */}
+            {currentDental?.warning && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+                    <AlertTriangle size={18} className="text-yellow-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-yellow-800 font-medium leading-relaxed">
+                        {currentDental.warning}
+                    </p>
+                </div>
+            )}
         </div>
       )}
 

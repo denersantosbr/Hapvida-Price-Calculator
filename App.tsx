@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import PlanSelector from './components/PlanSelector';
 import BeneficiaryManager from './components/BeneficiaryManager';
 import Summary from './components/Summary';
-import { PlanSelection, Beneficiary } from './types';
+import { PlanSelection, Beneficiary, Operator } from './types';
 import { Activity, Lock, User, ArrowRight, KeyRound, LogOut } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -13,11 +13,12 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState('');
 
   const [selection, setSelection] = useState<PlanSelection>({
-    operator: null,
+    operator: Operator.HAPVIDA, // Default to Hapvida
     region: null,
     contractType: null,
     planName: null,
     selectedVariantId: null,
+    dentalPlanId: null,
     applyDiscount: false,
   });
 

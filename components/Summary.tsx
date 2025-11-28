@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Beneficiary, PlanSelection } from '../types';
-import { ALL_PLANS, AGE_RANGES, ADESAO_FEE } from '../constants';
-import { FileDown, Users, Tag } from 'lucide-react';
+import { ALL_PLANS, AGE_RANGES, HAPVIDA_DENTAL_PLANS } from '../constants';
+import { FileDown, Users, Tag, Smile } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -13,9 +13,14 @@ interface SummaryProps {
 
 const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
   
-  // Find current plan data from flat list
+  // Find current plan data
   const variant = selection.selectedVariantId 
     ? ALL_PLANS.find(p => p.id === selection.selectedVariantId) 
+    : null;
+
+  // Find dental plan
+  const dentalPlan = selection.dentalPlanId
+    ? HAPVIDA_DENTAL_PLANS.find(d => d.id === selection.dentalPlanId)
     : null;
 
   // Find correct price table based on total lives (Volume Pricing)
@@ -27,7 +32,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
 
   const activePriceTable = getPriceTable();
 
-  const calculateCost = (ageIndex: number) => {
+  const calculateHealthCost = (ageIndex: number) => {
     if (!activePriceTable) return 0;
     let price = activePriceTable.prices[ageIndex] || 0;
     
@@ -38,8 +43,15 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     return price;
   };
 
+  const calculateDentalCost = () => {
+      if (!dentalPlan) return 0;
+      return dentalPlan.price;
+  };
+
   // Calculate Totals
-  const healthTotalMonthly = beneficiaries.reduce((acc, curr) => acc + calculateCost(curr.ageRangeIndex), 0);
+  const healthTotalMonthly = beneficiaries.reduce((acc, curr) => acc + calculateHealthCost(curr.ageRangeIndex), 0);
+  const dentalTotalMonthly = beneficiaries.length * calculateDentalCost();
+  const totalMonthly = healthTotalMonthly + dentalTotalMonthly;
   
   // Format currency
   const fmt = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -71,15 +83,19 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     const infoData = [
         ["Operadora", selection.operator || "-"],
         ["Região", selection.region || "-"],
-        ["Plano", variant.planName],
+        ["Plano Saúde", variant.planName],
         ["Segmentação", variant.segmentation],
         ["Acomodação", variant.accommodation],
         ["Coparticipação", variant.coparticipation],
         ["Vidas", beneficiaries.length.toString()]
     ];
 
+    if (dentalPlan) {
+        infoData.push(["Plano Odonto", `${dentalPlan.name} (${fmt(dentalPlan.price)}/vida)`]);
+    }
+
     if (selection.applyDiscount) {
-        infoData.push(["Condição", "COM DESCONTO PROMOCIONAL 15%"]);
+        infoData.push(["Condição", "COM DESCONTO PROMOCIONAL 15% (Saúde)"]);
     }
 
     autoTableFn(doc, {
@@ -97,12 +113,13 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     const rows = beneficiaries.map((b, i) => [
         b.name,
         AGE_RANGES[b.ageRangeIndex],
-        fmt(calculateCost(b.ageRangeIndex))
+        fmt(calculateHealthCost(b.ageRangeIndex)),
+        dentalPlan ? fmt(dentalPlan.price) : '-'
     ]);
 
     autoTableFn(doc, {
         startY: lastY + 5,
-        head: [['Nome', 'Idade', 'Valor']],
+        head: [['Nome', 'Idade', 'Saúde', 'Odonto']],
         body: rows,
         theme: 'striped',
         headStyles: { fillColor: [240, 240, 240], textColor: 0, fontStyle: 'bold' },
@@ -113,13 +130,31 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     const totalY = (doc as any).lastAutoTable.finalY + 10;
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
-    doc.text(`Total Mensal: ${fmt(healthTotalMonthly)}`, 140, totalY, { align: 'right' });
+    doc.text(`Total Mensal: ${fmt(totalMonthly)}`, 140, totalY, { align: 'right' });
     
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    
+    let offset = 6;
+    if (dentalTotalMonthly > 0) {
+        doc.text(`(Saúde: ${fmt(healthTotalMonthly)} + Odonto: ${fmt(dentalTotalMonthly)})`, 140, totalY + offset, { align: 'right' });
+        offset += 5;
+    }
+
     if (selection.applyDiscount) {
-        doc.setFontSize(9);
         doc.setFont("helvetica", "italic");
         doc.setTextColor(0, 150, 0);
-        doc.text("* Valor com desconto aplicado nas primeiras mensalidades.", 140, totalY + 6, { align: 'right' });
+        doc.text("* Desconto de 15% aplicado no Saúde (meses 1-3).", 140, totalY + offset, { align: 'right' });
+    }
+
+    // Warnings for Dental
+    if (dentalPlan?.warning) {
+        const warningY = 250;
+        doc.setFontSize(8);
+        doc.setTextColor(200, 0, 0);
+        doc.text("AVISO IMPORTANTE SOBRE O ODONTO:", 14, warningY);
+        doc.setTextColor(50);
+        doc.text(dentalPlan.warning, 14, warningY + 5, { maxWidth: 180 });
     }
 
     // Footer
@@ -128,7 +163,7 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     doc.setTextColor(150);
     doc.text("Valores estimados sujeitos a alteração e análise de crédito. Válido para Out/2025.", 105, 280, { align: 'center' });
 
-    doc.save("simulacao_saude.pdf");
+    doc.save("simulacao_saude_odonto.pdf");
   };
 
   if (!variant) return <div className="p-6 bg-white rounded-2xl border border-slate-100 text-center text-slate-400">Selecione um plano para ver o resumo.</div>;
@@ -137,24 +172,42 @@ const Summary: React.FC<SummaryProps> = ({ selection, beneficiaries }) => {
     <div className="bg-white rounded-2xl shadow-xl shadow-slate-200 border border-slate-100 overflow-hidden sticky top-6">
       <div className="bg-slate-900 p-6 text-white relative">
         <h3 className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">
-            Mensalidade Estimada
+            Mensalidade Total
         </h3>
         <div className="flex items-end gap-2">
-            <div className="text-4xl font-bold tracking-tight">{fmt(healthTotalMonthly)}</div>
+            <div className="text-4xl font-bold tracking-tight">{fmt(totalMonthly)}</div>
             {selection.applyDiscount && (
                 <div className="mb-2 text-green-400 bg-green-900/30 px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1">
                     <Tag size={10} /> -15%
                 </div>
             )}
         </div>
+        {dentalTotalMonthly > 0 && (
+            <div className="text-xs text-slate-400 mt-1 flex gap-2">
+                <span>Saúde: {fmt(healthTotalMonthly)}</span>
+                <span>+</span>
+                <span>Odonto: {fmt(dentalTotalMonthly)}</span>
+            </div>
+        )}
       </div>
 
       <div className="p-6 space-y-6">
         <div className="space-y-4">
             <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-3">
-                <span className="text-slate-500">Plano</span>
+                <span className="text-slate-500">Plano Saúde</span>
                 <span className="font-bold text-slate-800 text-right">{variant.planName}</span>
             </div>
+            
+            {dentalPlan && (
+                <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-3 bg-indigo-50/50 -mx-2 px-2 rounded">
+                    <div className="flex items-center gap-1.5 text-indigo-600">
+                        <Smile size={14}/>
+                        <span className="font-semibold">Odonto</span>
+                    </div>
+                    <span className="font-medium text-slate-700 text-right text-xs max-w-[150px] leading-tight">{dentalPlan.name}</span>
+                </div>
+            )}
+
             <div className="flex justify-between items-center text-sm border-b border-slate-100 pb-3">
                 <span className="text-slate-500">Região</span>
                 <span className="font-medium text-slate-700">{selection.region}</span>

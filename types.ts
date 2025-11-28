@@ -34,6 +34,16 @@ export interface PlanVariant {
   discountAvailable?: boolean; // For Hapvida 15%
 }
 
+export interface DentalPlan {
+  id: string;
+  name: string;
+  operator: Operator;
+  contractType: ContractType | 'BOTH';
+  price: number;
+  description: string;
+  warning?: string; // For "Regime Misto"
+}
+
 export interface Beneficiary {
   id: string;
   name: string;
@@ -46,5 +56,6 @@ export interface PlanSelection {
   contractType: ContractType | null;
   planName: string | null;
   selectedVariantId: string | null;
+  dentalPlanId: string | null;
   applyDiscount: boolean;
 }
